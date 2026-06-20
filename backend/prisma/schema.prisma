@@ -34,9 +34,9 @@ enum MistakeType {
 
 model User {
   id Int @id @default(autoincrement())
-  Firstname String
-  LastName String
-  Email_id String @unique
+  firstname String
+  lastName String
+  email_id String @unique
   date_of_birth DateTime?
   Password String
   questions Questions[]
@@ -51,7 +51,7 @@ model Questions {
   userId Int
 
   // Analytics
-  Topic String
+  topic String
   dateSolved DateTime
   mistaketype MistakeType?
   difficulty Difficulty
@@ -60,6 +60,8 @@ model Questions {
   user User @relation(fields: [userId],references: [id])
 
   // Review Schema 
-  nextreviewdate DateTime
-  Rreviewcount Int @default(0)
+  nextreviewdate DateTime?
+  reviewcount Int @default(0)
+  createdAt DateTime @default(now())
+  UpdatedAt DateTime @updatedAt
 }
