@@ -11,3 +11,55 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Difficulty {
+  EASY
+  MEDIUM 
+  HARD
+}
+
+enum Status {
+  SOLVED
+  SOLVED_WITH_HINTS
+  UNSOLVED
+}
+
+enum MistakeType {
+  CONCEPTUAL
+  EDGE_CASE
+  IMPLEMENTATION
+  CARELESSNESS
+  OPTIMIZATION
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  Firstname String
+  LastName String
+  Email_id String @unique
+  date_of_birth DateTime?
+  Password String
+  questions Questions[]
+}
+
+model Questions {
+  // Mistakes Params
+  id Int @id @default(autoincrement())
+  title String
+  desciption String
+  Url String 
+  userId Int
+
+  // Analytics
+  Topic String
+  dateSolved DateTime
+  mistaketype MistakeType?
+  difficulty Difficulty
+  status Status
+
+  user User @relation(fields: [userId],references: [id])
+
+  // Review Schema 
+  nextreviewdate DateTime
+  Rreviewcount Int @default(0)
+}
