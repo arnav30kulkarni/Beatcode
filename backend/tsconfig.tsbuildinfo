@@ -1,1 +1,1 @@
-{"root":["./src/server.ts"],"version":"5.9.3"}
+{"root":["./src/server.ts","./src/router/mainrouter.ts","./src/router/questionroutes.ts","./src/router/userroutes.ts"],"version":"5.9.3"}
