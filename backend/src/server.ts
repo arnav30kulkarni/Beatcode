@@ -12,10 +12,6 @@ app.use(express.json());
 router.use("/api/v1",mainRouter);
 app.use(router);
 
-app.get("/",({req,res}: {req:any, res: any}):void=>{
-    res.send("Server is Running ")
-});
-
 app.listen(3000,()=>{
     console.log("server is runnning on port 3000");
 })
