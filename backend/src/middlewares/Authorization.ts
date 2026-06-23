@@ -1,10 +1,15 @@
 import jwt from "jsonwebtoken";
+
 const secretpass = process.env.secretpass;
 
-const AuthMiddlware= (req:Request,res:Response,next:any):void => {
-    const authHeader = req.headers.authorization;
+if (!secretpass) {
+    throw new Error("Missing secretpass environment variable");
+}
 
-    if(!authHeader || authHeader.startsWith("Bearer")){
+const AuthMiddlware= (req:any,res:any,next:any):void => {
+    const authHeader = req.headers.authorization
+
+    if(!authHeader || !authHeader.startsWith("Bearer")){
         return res.status(401).json({
             msg:"Bad Auth Header"
         })
@@ -12,10 +17,10 @@ const AuthMiddlware= (req:Request,res:Response,next:any):void => {
 
     const token = authHeader.split(" ")[1];
     try {
-        const decoded = jwt.verify(token,secretpass)
+        const decoded = jwt.verify(token,secretpass) as any;
 
-        if(decoded.email_id){
-            req.email_id = decoded.email_id
+        if(decoded.id){
+            req.id = decoded.id;
             next()
         }
         else{
