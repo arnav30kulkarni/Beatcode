@@ -1,8 +1,10 @@
-import { date, email, z } from "zod";
+import { z } from "zod";
 import bcrypt from "bcrypt";
 const saltrounds = 10;
 import jwt from "jsonwebtoken"
 const secretpass = process.env.secretpass;
+import router from "../router/userRoutes"
+import  AuthMiddlware  from "../middlewares/Authorization" 
 
 if (!secretpass) {
     throw new Error("Missing secretpass environment variable");
@@ -10,7 +12,12 @@ if (!secretpass) {
 
 // Initialize Prisma Client
 import { PrismaClient } from "../generated/prisma/client";
-const prisma = new PrismaClient();
+import { PrismaPg } from "@prisma/adapter-pg";
+const prisma = new PrismaClient({
+    adapter: new PrismaPg({
+        connectionString: process.env.DATABASE_URL
+    })
+});
 
 const UserCreateSchema = z.object({
   firstname: z.string().trim(),
@@ -20,7 +27,7 @@ const UserCreateSchema = z.object({
   Password: z.string().min(6),
 });
 
-const signUp = async (req:any,res:any) => {
+router.post("/signup",async (req:any,res:any) => {
     const body = req.body
 
     const parsedBody = UserCreateSchema.safeParse(body);
@@ -71,10 +78,10 @@ const signUp = async (req:any,res:any) => {
         })
         console.error(error);
     }
-} 
+});
 
 
-const signIn = async (req:any,res:any)=> {
+router.post("/signin",AuthMiddlware,async(req:any,res:any)=> {
     const signInSchema = z.object({
         email_id:z.string().email(),
         Password:z.string()
@@ -118,7 +125,8 @@ const signIn = async (req:any,res:any)=> {
         },secretpass);
         console.log(loggedInUser.id,token);
          return res.status(200).json({
-            msg:"user successfully logged in!"
+            msg:"user successfully logged in!",
+            token, user_id:loggedInUser.id
         });
         
     } catch (error) {
@@ -126,9 +134,9 @@ const signIn = async (req:any,res:any)=> {
             msg:"Internal server error!"
         })
     }
-}
+});
 
-const updateProfile = async (req:any,res:any) => {
+router.put("/updateProfile",AuthMiddlware,async (req:any,res:any) => {
 
     const body = req.body
 
@@ -188,10 +196,68 @@ const updateProfile = async (req:any,res:any) => {
             msg:"Error updating user!"
         })
     }
-}
+});
 
-module.exports = {
-    signUp,
-    signIn,
-    updateProfile
-};
+router.put("/updatePass", async (req:any,res:any) => {
+    const updatePassSchema = z.object({
+        email_id: z.string().email(),
+        password: z.string(),
+        NewPass : z.string().min(6)
+    })
+
+    const body = req.body;
+    const parsedBody = updatePassSchema.safeParse(body);
+
+    if(!parsedBody.success){ 
+        return res.status(401).json({
+            msg:"Wrong Input"
+        })
+    }
+
+    const db_user = await prisma.user.findFirst({
+        where:{
+            email_id: body.email
+        }
+    })
+
+    try {
+        if(!db_user){
+            return res.status(404).json({
+                msg:"User Does not exist!"
+            })
+        }
+    } catch (error) {
+        return res.status(500).json({
+            msg:"Internal server error!"
+        })
+    }
+
+    const verifyPass = bcrypt.compare(body.password,db_user.Password);
+
+    if(!verifyPass){ 
+        res.status(403).json({
+            msg:"Invalid Password, try again!"
+        })
+    }
+
+    const updatedPass = await bcrypt.hash(body.NewPass,saltrounds);
+
+    try {
+        const updatedPassUser = await prisma.user.update({
+            where:{
+                email_id:body.email
+            },
+            data:{
+                Password:updatedPass
+            }
+        })
+
+        return res.status(200).json({
+            msg:"Successfully Updated password for the user!"
+        })
+    } catch (error) {
+        res.status(500).json({
+            msg:"Failed to update password!"
+        })
+    }
+});

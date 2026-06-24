@@ -35,6 +35,4 @@ const AuthMiddlware= (req:any,res:any,next:any):void => {
     }
 }
 
-module.exports = {
-    AuthMiddlware
-}
+ export default AuthMiddlware;
